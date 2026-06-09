@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Tracker 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2336;--border:#2a2f45;
+  --text:#e8eaf6;--muted:#6b7099;
+  --green:#4ade80;--green-dim:#1a3a28;
+  --orange:#fb923c;--orange-dim:#3a1f0d;
+  --blue:#60a5fa;--blue-dim:#0d2240;
+  --red:#f87171;--red-dim:#3a0d0d;
+  --yellow:#fbbf24;
+  --purple:#c084fc;--purple-dim:#2d1145;
+  --radius:14px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{background:var(--bg);}
+body{font-family:'DM Sans',sans-serif;color:var(--text);min-height:100vh;background:var(--bg);padding-bottom:80px;}
+
+.nav{position:sticky;top:0;z-index:100;background:rgba(15,17,23,0.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 4px;}
+.nav-btn{flex:1;padding:13px 4px;background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-bottom:2px solid transparent;transition:color .2s;}
+.nav-btn.active{color:var(--green);border-bottom-color:var(--green);}
+.nav-btn svg{width:18px;height:18px;}
+
+.view{display:none;padding:14px 12px;max-width:560px;margin:0 auto;}
+.view.active{display:block;}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,#1a3a28 0%,#0d2240 100%);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(74,222,128,.13),transparent 70%);}
+.hero-eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:5px;}
+.hero-title{font-size:20px;font-weight:600;line-height:1.2;}
+.hero-sub{font-size:12px;color:var(--muted);margin-top:5px;}
+
+/* Month selector */
+.month-scroller{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;margin-bottom:4px;}
+.month-scroller::-webkit-scrollbar{display:none;}
+.month-pill{flex-shrink:0;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s;}
+.month-pill.active{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 6px;text-align:center;}
+.stat-val{font-size:19px;font-weight:600;font-family:'DM Mono',monospace;}
+.stat-lbl{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.3;}
+
+/* Day cards */
+.day-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;transition:border-color .2s;}
+.day-card.weekend .day-header{background:var(--surface2);}
+.day-header{display:flex;align-items:center;gap:10px;padding:10px 13px;cursor:pointer;user-select:none;}
+.day-num{font-family:'DM Mono',monospace;font-size:17px;font-weight:500;min-width:26px;}
+.day-dow{font-size:11px;color:var(--muted);flex:1;font-weight:500;}
+.day-badges{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+.badge{font-size:10px;padding:2px 6px;border-radius:20px;font-weight:500;white-space:nowrap;}
+.badge-green{background:var(--green-dim);color:var(--green);}
+.badge-orange{background:var(--orange-dim);color:var(--orange);}
+.badge-blue{background:var(--blue-dim);color:var(--blue);}
+.badge-gray{background:#1e2336;color:var(--muted);}
+.day-chevron{color:var(--muted);font-size:11px;transition:transform .2s;margin-left:4px;}
+.day-card.open .day-chevron{transform:rotate(180deg);}
+.day-body{display:none;padding:11px 13px 13px;border-top:1px solid var(--border);background:var(--bg);}
+.day-card.open .day-body{display:block;}
+
+.section-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;margin-bottom:7px;margin-top:11px;}
+.section-label:first-child{margin-top:0;}
+.meal-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.meal-icon{font-size:15px;width:22px;text-align:center;flex-shrink:0;}
+.meal-name{font-size:11px;color:var(--muted);width:84px;flex-shrink:0;}
+.meal-btns{display:flex;gap:4px;flex:1;flex-wrap:wrap;}
+.choice-btn{padding:5px 9px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.choice-btn.sel-diet{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+.choice-btn.sel-free{background:var(--orange-dim);border-color:var(--orange);color:var(--orange);}
+.choice-btn.sel-skip{background:var(--red-dim);border-color:var(--red);color:var(--red);}
+.gym-row{display:flex;gap:7px;flex-wrap:wrap;}
+.gym-btn{flex:1;min-width:76px;padding:8px 6px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;text-align:center;}
+.gym-btn.sel{background:var(--blue-dim);border-color:var(--blue);color:var(--blue);}
+.peso-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:8px 12px;font-size:14px;font-family:'DM Mono',monospace;width:100px;}
+.peso-input:focus{outline:none;border-color:var(--orange);}
+.obs-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;font-family:'DM Sans',sans-serif;resize:none;}
+.obs-input:focus{outline:none;border-color:var(--purple);}
+
+/* Peso view */
+.weight-hero{background:linear-gradient(135deg,var(--orange-dim),#1a1200);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;}
+.meta-row{display:flex;gap:8px;margin-bottom:14px;}
+.meta-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px;}
+.meta-box label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:block;margin-bottom:5px;}
+.meta-input{background:transparent;border:none;color:var(--orange);font-size:20px;font-weight:600;font-family:'DM Mono',monospace;width:100%;}
+.meta-input:focus{outline:none;}
+.weight-row{display:flex;align-items:center;gap:10px;padding:9px 13px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:5px;}
+.weight-date{font-size:11px;color:var(--muted);flex:1;}
+.weight-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--orange);}
+.weight-delta{font-size:11px;font-family:'DM Mono',monospace;margin-left:4px;}
+.delta-up{color:var(--red);}
+.delta-down{color:var(--green);}
+
+/* Gym view */
+.gym-hero{background:linear-gradient(135deg,var(--blue-dim),#050f1a);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;}
+.gym-log-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;overflow:hidden;}
+.gym-log-header{display:flex;align-items:center;gap:10px;padding:9px 13px;border-bottom:1px solid var(--border);}
+.gym-log-date{font-size:11px;color:var(--muted);}
+.gym-log-type{font-size:12px;font-weight:600;color:var(--blue);flex:1;}
+.gym-log-dur{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+.gym-log-body{padding:9px 13px;}
+.gym-type-btns{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;}
+.gym-type-btn{padding:5px 11px;border-radius:20px;font-size:11px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.gym-type-btn.sel{background:var(--blue-dim);border-color:var(--blue);color:var(--blue);}
+.dur-row{display:flex;align-items:center;gap:8px;}
+.dur-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:7px 10px;font-size:13px;font-family:'DM Mono',monospace;width:75px;}
+.dur-input:focus{outline:none;border-color:var(--blue);}
+.int-btns{display:flex;gap:5px;margin-left:auto;}
+.int-btn{padding:5px 10px;border-radius:20px;font-size:11px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.int-btn.sel-high{background:#3a1010;border-color:var(--red);color:var(--red);}
+.int-btn.sel-mid{background:var(--blue-dim);border-color:var(--blue);color:var(--blue);}
+.int-btn.sel-low{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+
+/* Resumo */
+.resumo-hero{background:linear-gradient(135deg,var(--purple-dim),#0d2240);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;}
+.year-overview{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px;}
+.year-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 8px;text-align:center;}
+.year-stat-val{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;}
+.year-stat-lbl{font-size:9px;color:var(--muted);margin-top:3px;}
+.month-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px;margin-bottom:9px;}
+.month-card-title{font-size:13px;font-weight:600;color:var(--purple);margin-bottom:9px;}
+.month-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.mstat{background:var(--surface2);border-radius:var(--radius-sm);padding:9px;text-align:center;}
+.mstat-val{font-size:17px;font-weight:600;font-family:'DM Mono',monospace;}
+.mstat-lbl{font-size:9px;color:var(--muted);margin-top:2px;}
+.prog-bar-wrap{background:var(--border);border-radius:20px;height:5px;margin-top:9px;overflow:hidden;}
+.prog-bar{height:5px;border-radius:20px;background:linear-gradient(90deg,var(--green),var(--blue));transition:width .5s;}
+
+/* Toast */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 16px;border-radius:var(--radius);font-size:13px;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:999;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showView('diario')" id="nav-diario">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Diário
+  </button>
+  <button class="nav-btn" onclick="showView('peso')" id="nav-peso">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a4 4 0 100 8 4 4 0 000-8z"/><path d="M5 21h14l-2-10H7z"/></svg>Peso
+  </button>
+  <button class="nav-btn" onclick="showView('gym')" id="nav-gym">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11M6.5 17.5h11M4 12h16M4 9V6a1 1 0 011-1h1M4 15v3a1 1 0 001 1h1M20 9V6a1 1 0 00-1-1h-1M20 15v3a1 1 0 01-1 1h-1"/></svg>Academia
+  </button>
+  <button class="nav-btn" onclick="showView('resumo')" id="nav-resumo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Resumo
+  </button>
+</nav>
+
+<!-- DIÁRIO -->
+<div class="view active" id="view-diario">
+  <div class="hero">
+    <div class="hero-eyebrow">Tracker 2026</div>
+    <div class="hero-title" id="hero-month-title">—</div>
+    <div class="hero-sub">Toque em um dia para registrar</div>
+  </div>
+  <div class="month-scroller" id="month-scroller"></div>
+  <div class="stats">
+    <div class="stat-card"><div class="stat-val" id="s-diet" style="color:var(--green)">0</div><div class="stat-lbl">Refeições dieta</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-free" style="color:var(--orange)">0</div><div class="stat-lbl">Refeições livres</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-gym" style="color:var(--blue)">0</div><div class="stat-lbl">Treinos</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-pct" style="color:var(--purple)">—</div><div class="stat-lbl">% dieta</div></div>
+  </div>
+  <div id="day-list"></div>
+</div>
+
+<!-- PESO -->
+<div class="view" id="view-peso">
+  <div class="weight-hero">
+    <div class="hero-eyebrow">Evolução</div>
+    <div class="hero-title">⚖️ Peso</div>
+    <div class="hero-sub">Acompanhe seu progresso ao longo do ano</div>
+  </div>
+  <div class="meta-row">
+    <div class="meta-box"><label>Meta de peso</label><input class="meta-input" id="meta-peso" type="number" step="0.1" placeholder="––" oninput="saveMeta();renderPesoView()"/><span style="font-size:11px;color:var(--muted)">kg</span></div>
+    <div class="meta-box"><label>Peso inicial</label><div id="peso-inicial" style="font-size:20px;font-weight:600;font-family:'DM Mono',monospace;color:var(--orange)">—</div></div>
+    <div class="meta-box"><label>Peso atual</label><div id="peso-atual" style="font-size:20px;font-weight:600;font-family:'DM Mono',monospace;color:var(--orange)">—</div></div>
+  </div>
+  <div class="month-scroller" id="peso-month-scroller"></div>
+  <div id="weight-list"></div>
+</div>
+
+<!-- ACADEMIA -->
+<div class="view" id="view-gym">
+  <div class="gym-hero">
+    <div class="hero-eyebrow">Treinos 2026</div>
+    <div class="hero-title">🏋️ Academia</div>
+    <div class="hero-sub">Registre detalhes de cada treino</div>
+  </div>
+  <div id="gym-stats" class="stats" style="margin-bottom:14px;"></div>
+  <div class="month-scroller" id="gym-month-scroller"></div>
+  <div id="gym-list"></div>
+</div>
+
+<!-- RESUMO -->
+<div class="view" id="view-resumo">
+  <div class="resumo-hero">
+    <div class="hero-eyebrow">Visão geral</div>
+    <div class="hero-title">📊 2026 completo</div>
+    <div class="hero-sub">Resumo de todos os meses</div>
+  </div>
+  <div id="resumo-content"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const MONTHS = [{"m": 1, "name": "Janeiro", "days": [{"d": 1, "dow": "Qui", "weekend": false}, {"d": 2, "dow": "Sex", "weekend": false}, {"d": 3, "dow": "S\u00e1b", "weekend": true}, {"d": 4, "dow": "Dom", "weekend": true}, {"d": 5, "dow": "Seg", "weekend": false}, {"d": 6, "dow": "Ter", "weekend": false}, {"d": 7, "dow": "Qua", "weekend": false}, {"d": 8, "dow": "Qui", "weekend": false}, {"d": 9, "dow": "Sex", "weekend": false}, {"d": 10, "dow": "S\u00e1b", "weekend": true}, {"d": 11, "dow": "Dom", "weekend": true}, {"d": 12, "dow": "Seg", "weekend": false}, {"d": 13, "dow": "Ter", "weekend": false}, {"d": 14, "dow": "Qua", "weekend": false}, {"d": 15, "dow": "Qui", "weekend": false}, {"d": 16, "dow": "Sex", "weekend": false}, {"d": 17, "dow": "S\u00e1b", "weekend": true}, {"d": 18, "dow": "Dom", "weekend": true}, {"d": 19, "dow": "Seg", "weekend": false}, {"d": 20, "dow": "Ter", "weekend": false}, {"d": 21, "dow": "Qua", "weekend": false}, {"d": 22, "dow": "Qui", "weekend": false}, {"d": 23, "dow": "Sex", "weekend": false}, {"d": 24, "dow": "S\u00e1b", "weekend": true}, {"d": 25, "dow": "Dom", "weekend": true}, {"d": 26, "dow": "Seg", "weekend": false}, {"d": 27, "dow": "Ter", "weekend": false}, {"d": 28, "dow": "Qua", "weekend": false}, {"d": 29, "dow": "Qui", "weekend": false}, {"d": 30, "dow": "Sex", "weekend": false}, {"d": 31, "dow": "S\u00e1b", "weekend": true}]}, {"m": 2, "name": "Fevereiro", "days": [{"d": 1, "dow": "Dom", "weekend": true}, {"d": 2, "dow": "Seg", "weekend": false}, {"d": 3, "dow": "Ter", "weekend": false}, {"d": 4, "dow": "Qua", "weekend": false}, {"d": 5, "dow": "Qui", "weekend": false}, {"d": 6, "dow": "Sex", "weekend": false}, {"d": 7, "dow": "S\u00e1b", "weekend": true}, {"d": 8, "dow": "Dom", "weekend": true}, {"d": 9, "dow": "Seg", "weekend": false}, {"d": 10, "dow": "Ter", "weekend": false}, {"d": 11, "dow": "Qua", "weekend": false}, {"d": 12, "dow": "Qui", "weekend": false}, {"d": 13, "dow": "Sex", "weekend": false}, {"d": 14, "dow": "S\u00e1b", "weekend": true}, {"d": 15, "dow": "Dom", "weekend": true}, {"d": 16, "dow": "Seg", "weekend": false}, {"d": 17, "dow": "Ter", "weekend": false}, {"d": 18, "dow": "Qua", "weekend": false}, {"d": 19, "dow": "Qui", "weekend": false}, {"d": 20, "dow": "Sex", "weekend": false}, {"d": 21, "dow": "S\u00e1b", "weekend": true}, {"d": 22, "dow": "Dom", "weekend": true}, {"d": 23, "dow": "Seg", "weekend": false}, {"d": 24, "dow": "Ter", "weekend": false}, {"d": 25, "dow": "Qua", "weekend": false}, {"d": 26, "dow": "Qui", "weekend": false}, {"d": 27, "dow": "Sex", "weekend": false}, {"d": 28, "dow": "S\u00e1b", "weekend": true}]}, {"m": 3, "name": "Mar\u00e7o", "days": [{"d": 1, "dow": "Dom", "weekend": true}, {"d": 2, "dow": "Seg", "weekend": false}, {"d": 3, "dow": "Ter", "weekend": false}, {"d": 4, "dow": "Qua", "weekend": false}, {"d": 5, "dow": "Qui", "weekend": false}, {"d": 6, "dow": "Sex", "weekend": false}, {"d": 7, "dow": "S\u00e1b", "weekend": true}, {"d": 8, "dow": "Dom", "weekend": true}, {"d": 9, "dow": "Seg", "weekend": false}, {"d": 10, "dow": "Ter", "weekend": false}, {"d": 11, "dow": "Qua", "weekend": false}, {"d": 12, "dow": "Qui", "weekend": false}, {"d": 13, "dow": "Sex", "weekend": false}, {"d": 14, "dow": "S\u00e1b", "weekend": true}, {"d": 15, "dow": "Dom", "weekend": true}, {"d": 16, "dow": "Seg", "weekend": false}, {"d": 17, "dow": "Ter", "weekend": false}, {"d": 18, "dow": "Qua", "weekend": false}, {"d": 19, "dow": "Qui", "weekend": false}, {"d": 20, "dow": "Sex", "weekend": false}, {"d": 21, "dow": "S\u00e1b", "weekend": true}, {"d": 22, "dow": "Dom", "weekend": true}, {"d": 23, "dow": "Seg", "weekend": false}, {"d": 24, "dow": "Ter", "weekend": false}, {"d": 25, "dow": "Qua", "weekend": false}, {"d": 26, "dow": "Qui", "weekend": false}, {"d": 27, "dow": "Sex", "weekend": false}, {"d": 28, "dow": "S\u00e1b", "weekend": true}, {"d": 29, "dow": "Dom", "weekend": true}, {"d": 30, "dow": "Seg", "weekend": false}, {"d": 31, "dow": "Ter", "weekend": false}]}, {"m": 4, "name": "Abril", "days": [{"d": 1, "dow": "Qua", "weekend": false}, {"d": 2, "dow": "Qui", "weekend": false}, {"d": 3, "dow": "Sex", "weekend": false}, {"d": 4, "dow": "S\u00e1b", "weekend": true}, {"d": 5, "dow": "Dom", "weekend": true}, {"d": 6, "dow": "Seg", "weekend": false}, {"d": 7, "dow": "Ter", "weekend": false}, {"d": 8, "dow": "Qua", "weekend": false}, {"d": 9, "dow": "Qui", "weekend": false}, {"d": 10, "dow": "Sex", "weekend": false}, {"d": 11, "dow": "S\u00e1b", "weekend": true}, {"d": 12, "dow": "Dom", "weekend": true}, {"d": 13, "dow": "Seg", "weekend": false}, {"d": 14, "dow": "Ter", "weekend": false}, {"d": 15, "dow": "Qua", "weekend": false}, {"d": 16, "dow": "Qui", "weekend": false}, {"d": 17, "dow": "Sex", "weekend": false}, {"d": 18, "dow": "S\u00e1b", "weekend": true}, {"d": 19, "dow": "Dom", "weekend": true}, {"d": 20, "dow": "Seg", "weekend": false}, {"d": 21, "dow": "Ter", "weekend": false}, {"d": 22, "dow": "Qua", "weekend": false}, {"d": 23, "dow": "Qui", "weekend": false}, {"d": 24, "dow": "Sex", "weekend": false}, {"d": 25, "dow": "S\u00e1b", "weekend": true}, {"d": 26, "dow": "Dom", "weekend": true}, {"d": 27, "dow": "Seg", "weekend": false}, {"d": 28, "dow": "Ter", "weekend": false}, {"d": 29, "dow": "Qua", "weekend": false}, {"d": 30, "dow": "Qui", "weekend": false}]}, {"m": 5, "name": "Maio", "days": [{"d": 1, "dow": "Sex", "weekend": false}, {"d": 2, "dow": "S\u00e1b", "weekend": true}, {"d": 3, "dow": "Dom", "weekend": true}, {"d": 4, "dow": "Seg", "weekend": false}, {"d": 5, "dow": "Ter", "weekend": false}, {"d": 6, "dow": "Qua", "weekend": false}, {"d": 7, "dow": "Qui", "weekend": false}, {"d": 8, "dow": "Sex", "weekend": false}, {"d": 9, "dow": "S\u00e1b", "weekend": true}, {"d": 10, "dow": "Dom", "weekend": true}, {"d": 11, "dow": "Seg", "weekend": false}, {"d": 12, "dow": "Ter", "weekend": false}, {"d": 13, "dow": "Qua", "weekend": false}, {"d": 14, "dow": "Qui", "weekend": false}, {"d": 15, "dow": "Sex", "weekend": false}, {"d": 16, "dow": "S\u00e1b", "weekend": true}, {"d": 17, "dow": "Dom", "weekend": true}, {"d": 18, "dow": "Seg", "weekend": false}, {"d": 19, "dow": "Ter", "weekend": false}, {"d": 20, "dow": "Qua", "weekend": false}, {"d": 21, "dow": "Qui", "weekend": false}, {"d": 22, "dow": "Sex", "weekend": false}, {"d": 23, "dow": "S\u00e1b", "weekend": true}, {"d": 24, "dow": "Dom", "weekend": true}, {"d": 25, "dow": "Seg", "weekend": false}, {"d": 26, "dow": "Ter", "weekend": false}, {"d": 27, "dow": "Qua", "weekend": false}, {"d": 28, "dow": "Qui", "weekend": false}, {"d": 29, "dow": "Sex", "weekend": false}, {"d": 30, "dow": "S\u00e1b", "weekend": true}, {"d": 31, "dow": "Dom", "weekend": true}]}, {"m": 6, "name": "Junho", "days": [{"d": 1, "dow": "Seg", "weekend": false}, {"d": 2, "dow": "Ter", "weekend": false}, {"d": 3, "dow": "Qua", "weekend": false}, {"d": 4, "dow": "Qui", "weekend": false}, {"d": 5, "dow": "Sex", "weekend": false}, {"d": 6, "dow": "S\u00e1b", "weekend": true}, {"d": 7, "dow": "Dom", "weekend": true}, {"d": 8, "dow": "Seg", "weekend": false}, {"d": 9, "dow": "Ter", "weekend": false}, {"d": 10, "dow": "Qua", "weekend": false}, {"d": 11, "dow": "Qui", "weekend": false}, {"d": 12, "dow": "Sex", "weekend": false}, {"d": 13, "dow": "S\u00e1b", "weekend": true}, {"d": 14, "dow": "Dom", "weekend": true}, {"d": 15, "dow": "Seg", "weekend": false}, {"d": 16, "dow": "Ter", "weekend": false}, {"d": 17, "dow": "Qua", "weekend": false}, {"d": 18, "dow": "Qui", "weekend": false}, {"d": 19, "dow": "Sex", "weekend": false}, {"d": 20, "dow": "S\u00e1b", "weekend": true}, {"d": 21, "dow": "Dom", "weekend": true}, {"d": 22, "dow": "Seg", "weekend": false}, {"d": 23, "dow": "Ter", "weekend": false}, {"d": 24, "dow": "Qua", "weekend": false}, {"d": 25, "dow": "Qui", "weekend": false}, {"d": 26, "dow": "Sex", "weekend": false}, {"d": 27, "dow": "S\u00e1b", "weekend": true}, {"d": 28, "dow": "Dom", "weekend": true}, {"d": 29, "dow": "Seg", "weekend": false}, {"d": 30, "dow": "Ter", "weekend": false}]}, {"m": 7, "name": "Julho", "days": [{"d": 1, "dow": "Qua", "weekend": false}, {"d": 2, "dow": "Qui", "weekend": false}, {"d": 3, "dow": "Sex", "weekend": false}, {"d": 4, "dow": "S\u00e1b", "weekend": true}, {"d": 5, "dow": "Dom", "weekend": true}, {"d": 6, "dow": "Seg", "weekend": false}, {"d": 7, "dow": "Ter", "weekend": false}, {"d": 8, "dow": "Qua", "weekend": false}, {"d": 9, "dow": "Qui", "weekend": false}, {"d": 10, "dow": "Sex", "weekend": false}, {"d": 11, "dow": "S\u00e1b", "weekend": true}, {"d": 12, "dow": "Dom", "weekend": true}, {"d": 13, "dow": "Seg", "weekend": false}, {"d": 14, "dow": "Ter", "weekend": false}, {"d": 15, "dow": "Qua", "weekend": false}, {"d": 16, "dow": "Qui", "weekend": false}, {"d": 17, "dow": "Sex", "weekend": false}, {"d": 18, "dow": "S\u00e1b", "weekend": true}, {"d": 19, "dow": "Dom", "weekend": true}, {"d": 20, "dow": "Seg", "weekend": false}, {"d": 21, "dow": "Ter", "weekend": false}, {"d": 22, "dow": "Qua", "weekend": false}, {"d": 23, "dow": "Qui", "weekend": false}, {"d": 24, "dow": "Sex", "weekend": false}, {"d": 25, "dow": "S\u00e1b", "weekend": true}, {"d": 26, "dow": "Dom", "weekend": true}, {"d": 27, "dow": "Seg", "weekend": false}, {"d": 28, "dow": "Ter", "weekend": false}, {"d": 29, "dow": "Qua", "weekend": false}, {"d": 30, "dow": "Qui", "weekend": false}, {"d": 31, "dow": "Sex", "weekend": false}]}, {"m": 8, "name": "Agosto", "days": [{"d": 1, "dow": "S\u00e1b", "weekend": true}, {"d": 2, "dow": "Dom", "weekend": true}, {"d": 3, "dow": "Seg", "weekend": false}, {"d": 4, "dow": "Ter", "weekend": false}, {"d": 5, "dow": "Qua", "weekend": false}, {"d": 6, "dow": "Qui", "weekend": false}, {"d": 7, "dow": "Sex", "weekend": false}, {"d": 8, "dow": "S\u00e1b", "weekend": true}, {"d": 9, "dow": "Dom", "weekend": true}, {"d": 10, "dow": "Seg", "weekend": false}, {"d": 11, "dow": "Ter", "weekend": false}, {"d": 12, "dow": "Qua", "weekend": false}, {"d": 13, "dow": "Qui", "weekend": false}, {"d": 14, "dow": "Sex", "weekend": false}, {"d": 15, "dow": "S\u00e1b", "weekend": true}, {"d": 16, "dow": "Dom", "weekend": true}, {"d": 17, "dow": "Seg", "weekend": false}, {"d": 18, "dow": "Ter", "weekend": false}, {"d": 19, "dow": "Qua", "weekend": false}, {"d": 20, "dow": "Qui", "weekend": false}, {"d": 21, "dow": "Sex", "weekend": false}, {"d": 22, "dow": "S\u00e1b", "weekend": true}, {"d": 23, "dow": "Dom", "weekend": true}, {"d": 24, "dow": "Seg", "weekend": false}, {"d": 25, "dow": "Ter", "weekend": false}, {"d": 26, "dow": "Qua", "weekend": false}, {"d": 27, "dow": "Qui", "weekend": false}, {"d": 28, "dow": "Sex", "weekend": false}, {"d": 29, "dow": "S\u00e1b", "weekend": true}, {"d": 30, "dow": "Dom", "weekend": true}, {"d": 31, "dow": "Seg", "weekend": false}]}, {"m": 9, "name": "Setembro", "days": [{"d": 1, "dow": "Ter", "weekend": false}, {"d": 2, "dow": "Qua", "weekend": false}, {"d": 3, "dow": "Qui", "weekend": false}, {"d": 4, "dow": "Sex", "weekend": false}, {"d": 5, "dow": "S\u00e1b", "weekend": true}, {"d": 6, "dow": "Dom", "weekend": true}, {"d": 7, "dow": "Seg", "weekend": false}, {"d": 8, "dow": "Ter", "weekend": false}, {"d": 9, "dow": "Qua", "weekend": false}, {"d": 10, "dow": "Qui", "weekend": false}, {"d": 11, "dow": "Sex", "weekend": false}, {"d": 12, "dow": "S\u00e1b", "weekend": true}, {"d": 13, "dow": "Dom", "weekend": true}, {"d": 14, "dow": "Seg", "weekend": false}, {"d": 15, "dow": "Ter", "weekend": false}, {"d": 16, "dow": "Qua", "weekend": false}, {"d": 17, "dow": "Qui", "weekend": false}, {"d": 18, "dow": "Sex", "weekend": false}, {"d": 19, "dow": "S\u00e1b", "weekend": true}, {"d": 20, "dow": "Dom", "weekend": true}, {"d": 21, "dow": "Seg", "weekend": false}, {"d": 22, "dow": "Ter", "weekend": false}, {"d": 23, "dow": "Qua", "weekend": false}, {"d": 24, "dow": "Qui", "weekend": false}, {"d": 25, "dow": "Sex", "weekend": false}, {"d": 26, "dow": "S\u00e1b", "weekend": true}, {"d": 27, "dow": "Dom", "weekend": true}, {"d": 28, "dow": "Seg", "weekend": false}, {"d": 29, "dow": "Ter", "weekend": false}, {"d": 30, "dow": "Qua", "weekend": false}]}, {"m": 10, "name": "Outubro", "days": [{"d": 1, "dow": "Qui", "weekend": false}, {"d": 2, "dow": "Sex", "weekend": false}, {"d": 3, "dow": "S\u00e1b", "weekend": true}, {"d": 4, "dow": "Dom", "weekend": true}, {"d": 5, "dow": "Seg", "weekend": false}, {"d": 6, "dow": "Ter", "weekend": false}, {"d": 7, "dow": "Qua", "weekend": false}, {"d": 8, "dow": "Qui", "weekend": false}, {"d": 9, "dow": "Sex", "weekend": false}, {"d": 10, "dow": "S\u00e1b", "weekend": true}, {"d": 11, "dow": "Dom", "weekend": true}, {"d": 12, "dow": "Seg", "weekend": false}, {"d": 13, "dow": "Ter", "weekend": false}, {"d": 14, "dow": "Qua", "weekend": false}, {"d": 15, "dow": "Qui", "weekend": false}, {"d": 16, "dow": "Sex", "weekend": false}, {"d": 17, "dow": "S\u00e1b", "weekend": true}, {"d": 18, "dow": "Dom", "weekend": true}, {"d": 19, "dow": "Seg", "weekend": false}, {"d": 20, "dow": "Ter", "weekend": false}, {"d": 21, "dow": "Qua", "weekend": false}, {"d": 22, "dow": "Qui", "weekend": false}, {"d": 23, "dow": "Sex", "weekend": false}, {"d": 24, "dow": "S\u00e1b", "weekend": true}, {"d": 25, "dow": "Dom", "weekend": true}, {"d": 26, "dow": "Seg", "weekend": false}, {"d": 27, "dow": "Ter", "weekend": false}, {"d": 28, "dow": "Qua", "weekend": false}, {"d": 29, "dow": "Qui", "weekend": false}, {"d": 30, "dow": "Sex", "weekend": false}, {"d": 31, "dow": "S\u00e1b", "weekend": true}]}, {"m": 11, "name": "Novembro", "days": [{"d": 1, "dow": "Dom", "weekend": true}, {"d": 2, "dow": "Seg", "weekend": false}, {"d": 3, "dow": "Ter", "weekend": false}, {"d": 4, "dow": "Qua", "weekend": false}, {"d": 5, "dow": "Qui", "weekend": false}, {"d": 6, "dow": "Sex", "weekend": false}, {"d": 7, "dow": "S\u00e1b", "weekend": true}, {"d": 8, "dow": "Dom", "weekend": true}, {"d": 9, "dow": "Seg", "weekend": false}, {"d": 10, "dow": "Ter", "weekend": false}, {"d": 11, "dow": "Qua", "weekend": false}, {"d": 12, "dow": "Qui", "weekend": false}, {"d": 13, "dow": "Sex", "weekend": false}, {"d": 14, "dow": "S\u00e1b", "weekend": true}, {"d": 15, "dow": "Dom", "weekend": true}, {"d": 16, "dow": "Seg", "weekend": false}, {"d": 17, "dow": "Ter", "weekend": false}, {"d": 18, "dow": "Qua", "weekend": false}, {"d": 19, "dow": "Qui", "weekend": false}, {"d": 20, "dow": "Sex", "weekend": false}, {"d": 21, "dow": "S\u00e1b", "weekend": true}, {"d": 22, "dow": "Dom", "weekend": true}, {"d": 23, "dow": "Seg", "weekend": false}, {"d": 24, "dow": "Ter", "weekend": false}, {"d": 25, "dow": "Qua", "weekend": false}, {"d": 26, "dow": "Qui", "weekend": false}, {"d": 27, "dow": "Sex", "weekend": false}, {"d": 28, "dow": "S\u00e1b", "weekend": true}, {"d": 29, "dow": "Dom", "weekend": true}, {"d": 30, "dow": "Seg", "weekend": false}]}, {"m": 12, "name": "Dezembro", "days": [{"d": 1, "dow": "Ter", "weekend": false}, {"d": 2, "dow": "Qua", "weekend": false}, {"d": 3, "dow": "Qui", "weekend": false}, {"d": 4, "dow": "Sex", "weekend": false}, {"d": 5, "dow": "S\u00e1b", "weekend": true}, {"d": 6, "dow": "Dom", "weekend": true}, {"d": 7, "dow": "Seg", "weekend": false}, {"d": 8, "dow": "Ter", "weekend": false}, {"d": 9, "dow": "Qua", "weekend": false}, {"d": 10, "dow": "Qui", "weekend": false}, {"d": 11, "dow": "Sex", "weekend": false}, {"d": 12, "dow": "S\u00e1b", "weekend": true}, {"d": 13, "dow": "Dom", "weekend": true}, {"d": 14, "dow": "Seg", "weekend": false}, {"d": 15, "dow": "Ter", "weekend": false}, {"d": 16, "dow": "Qua", "weekend": false}, {"d": 17, "dow": "Qui", "weekend": false}, {"d": 18, "dow": "Sex", "weekend": false}, {"d": 19, "dow": "S\u00e1b", "weekend": true}, {"d": 20, "dow": "Dom", "weekend": true}, {"d": 21, "dow": "Seg", "weekend": false}, {"d": 22, "dow": "Ter", "weekend": false}, {"d": 23, "dow": "Qua", "weekend": false}, {"d": 24, "dow": "Qui", "weekend": false}, {"d": 25, "dow": "Sex", "weekend": false}, {"d": 26, "dow": "S\u00e1b", "weekend": true}, {"d": 27, "dow": "Dom", "weekend": true}, {"d": 28, "dow": "Seg", "weekend": false}, {"d": 29, "dow": "Ter", "weekend": false}, {"d": 30, "dow": "Qua", "weekend": false}, {"d": 31, "dow": "Qui", "weekend": false}]}];
+const MEALS = [
+  {id:'cafe',  icon:'☀️', name:'Café da manhã'},
+  {id:'almoco',icon:'🥗', name:'Almoço'},
+  {id:'lanche',icon:'🍎', name:'Lanche'},
+  {id:'jantar',icon:'🌙', name:'Jantar'},
+];
+const GYM_TYPES = ['Musculação','Cardio','Funcional','Corrida','Natação','Yoga','Outro'];
+const KEY = 'tracker_2026';
+
+let curMonth = new Date().getMonth(); // 0-indexed
+let pesoMonth = curMonth;
+let gymMonth  = curMonth;
+
+let data = JSON.parse(localStorage.getItem(KEY)||'{}');
+function save(){ localStorage.setItem(KEY,JSON.stringify(data)); updateStats(); }
+function dk(m,d){ const k=m+'-'+d; if(!data[k]) data[k]={}; return data[k]; }
+
+// Toast
+let tt;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),1600);}
+
+// Views
+function showView(v){
+  document.querySelectorAll('.view').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('nav-'+v).classList.add('active');
+  if(v==='peso')   renderPesoView();
+  if(v==='gym')    renderGymView();
+  if(v==='resumo') renderResumo();
+}
+
+// Month scroller
+function buildScroller(containerId, activeMth, clickFn){
+  const c=document.getElementById(containerId);
+  c.innerHTML='';
+  MONTHS.forEach((m,i)=>{
+    const p=document.createElement('button');
+    p.className='month-pill'+(i===activeMth?' active':'');
+    p.textContent=m.name.slice(0,3);
+    p.onclick=()=>clickFn(i);
+    c.appendChild(p);
+  });
+  // scroll to active
+  setTimeout(()=>{const a=c.querySelector('.active');if(a)a.scrollIntoView({inline:'center',block:'nearest'});},50);
+}
+
+function setMonth(mi){
+  curMonth=mi;
+  document.getElementById('hero-month-title').textContent=MONTHS[mi].name+' 2026';
+  buildScroller('month-scroller',mi,setMonth);
+  renderDayList();
+  updateStats();
+}
+
+// Stats for current month
+function updateStats(){
+  const mi=curMonth;
+  let diet=0,free=0,gym=0,total=0;
+  MONTHS[mi].days.forEach(day=>{
+    const dd=dk(mi,day.d);
+    MEALS.forEach(m=>{if(dd[m.id]==='diet'){diet++;total++;}if(dd[m.id]==='free'){free++;total++;} });
+    if(dd.gym==='gym') gym++;
+  });
+  document.getElementById('s-diet').textContent=diet;
+  document.getElementById('s-free').textContent=free;
+  document.getElementById('s-gym').textContent=gym;
+  document.getElementById('s-pct').textContent=total>0?Math.round(diet/total*100)+'%':'—';
+}
+
+// Day list
+function renderDayList(){
+  const mi=curMonth;
+  const list=document.getElementById('day-list');
+  list.innerHTML='';
+  MONTHS[mi].days.forEach(day=>{
+    const dd=dk(mi,day.d);
+    const card=document.createElement('div');
+    card.className='day-card'+(day.weekend?' weekend':'');
+    card.id='card-'+mi+'-'+day.d;
+    card.innerHTML=`
+      <div class="day-header" onclick="toggleDay(${mi},${day.d})">
+        <div class="day-num">${String(day.d).padStart(2,'0')}</div>
+        <div class="day-dow">${day.dow}</div>
+        <div class="day-badges" id="badges-${mi}-${day.d}">${getBadges(mi,day.d)}</div>
+        <div class="day-chevron">▼</div>
+      </div>
+      <div class="day-body" id="body-${mi}-${day.d}">${renderDayBody(mi,day.d)}</div>`;
+    list.appendChild(card);
+  });
+}
+
+function getBadges(mi,dayNum){
+  const dd=dk(mi,dayNum);
+  let b='',dc=0,fc=0;
+  MEALS.forEach(m=>{if(dd[m.id]==='diet')dc++;if(dd[m.id]==='free')fc++;});
+  if(dc) b+=`<span class="badge badge-green">${dc} dieta</span>`;
+  if(fc) b+=`<span class="badge badge-orange">${fc} livre</span>`;
+  if(dd.gym==='gym') b+=`<span class="badge badge-blue">🏋️</span>`;
+  if(dd.peso) b+=`<span class="badge badge-gray">${dd.peso}kg</span>`;
+  return b||'<span class="badge badge-gray">vazio</span>';
+}
+
+function renderDayBody(mi,dayNum){
+  const dd=dk(mi,dayNum);
+  let h='<div class="section-label">Refeições</div>';
+  MEALS.forEach(m=>{
+    const s=dd[m.id]||'';
+    h+=`<div class="meal-row">
+      <div class="meal-icon">${m.icon}</div>
+      <div class="meal-name">${m.name}</div>
+      <div class="meal-btns">
+        <button class="choice-btn ${s==='diet'?'sel-diet':''}" onclick="setMeal(${mi},${dayNum},'${m.id}','diet')">✅ Dieta</button>
+        <button class="choice-btn ${s==='free'?'sel-free':''}" onclick="setMeal(${mi},${dayNum},'${m.id}','free')">🍔 Livre</button>
+        <button class="choice-btn ${s==='skip'?'sel-skip':''}" onclick="setMeal(${mi},${dayNum},'${m.id}','skip')">⬜ Pulei</button>
+      </div></div>`;
+  });
+  const gym=dd.gym||'rest';
+  h+=`<div class="section-label" style="margin-top:13px">Academia</div>
+    <div class="gym-row">
+      <button class="gym-btn ${gym==='gym'?'sel':''}" onclick="setGym(${mi},${dayNum},'gym')">🏋️ Treinei</button>
+      <button class="gym-btn ${gym==='walk'?'sel':''}" onclick="setGym(${mi},${dayNum},'walk')">🚶 Caminhei</button>
+      <button class="gym-btn" onclick="setGym(${mi},${dayNum},'rest')">😴 Descanso</button>
+    </div>
+    <div class="section-label" style="margin-top:13px">Peso do dia</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <input class="peso-input" type="number" step="0.1" placeholder="0.0" value="${dd.peso||''}"
+        oninput="setPeso(${mi},${dayNum},this.value)"/>
+      <span style="font-size:12px;color:var(--muted)">kg</span>
+    </div>
+    <div class="section-label" style="margin-top:13px">Observações</div>
+    <textarea class="obs-input" rows="2" placeholder="Como foi o dia…" oninput="setObs(${mi},${dayNum},this.value)">${dd.obs||''}</textarea>`;
+  return h;
+}
+
+function toggleDay(mi,dayNum){document.getElementById('card-'+mi+'-'+dayNum).classList.toggle('open');}
+
+function setMeal(mi,dayNum,mealId,val){
+  const dd=dk(mi,dayNum);
+  dd[mealId]=dd[mealId]===val?'':val;
+  save();
+  document.getElementById('body-'+mi+'-'+dayNum).innerHTML=renderDayBody(mi,dayNum);
+  document.getElementById('badges-'+mi+'-'+dayNum).innerHTML=getBadges(mi,dayNum);
+  const msgs={diet:'✅ Dentro da dieta!',free:'🍔 Refeição livre',skip:'⬜ Pulei'};
+  if(dd[mealId]) toast(msgs[dd[mealId]]||'');
+}
+function setGym(mi,dayNum,val){
+  dk(mi,dayNum).gym=val; save();
+  document.getElementById('body-'+mi+'-'+dayNum).innerHTML=renderDayBody(mi,dayNum);
+  document.getElementById('badges-'+mi+'-'+dayNum).innerHTML=getBadges(mi,dayNum);
+  if(val==='gym') toast('🏋️ Treino registrado!');
+}
+function setPeso(mi,dayNum,val){
+  dk(mi,dayNum).peso=val?parseFloat(val):''; save();
+  document.getElementById('badges-'+mi+'-'+dayNum).innerHTML=getBadges(mi,dayNum);
+}
+function setObs(mi,dayNum,val){dk(mi,dayNum).obs=val;save();}
+
+// ── PESO VIEW ────────────────────────────────────────────────────────────────
+function saveMeta(){const v=parseFloat(document.getElementById('meta-peso').value);localStorage.setItem('meta-peso',isNaN(v)?'':v);}
+
+function renderPesoView(){
+  const meta=parseFloat(localStorage.getItem('meta-peso'))||null;
+  const el=document.getElementById('meta-peso');
+  if(el&&meta) el.value=meta;
+
+  buildScroller('peso-month-scroller',pesoMonth,(mi)=>{pesoMonth=mi;renderPesoView();});
+
+  const mi=pesoMonth;
+  const entries=MONTHS[mi].days.map(day=>{
+    const p=dk(mi,day.d).peso;
+    return p?{day:day.d,dow:day.dow,peso:parseFloat(p)}:null;
+  }).filter(Boolean);
+
+  // global first/last
+  let allEntries=[];
+  MONTHS.forEach((_,i)=>MONTHS[i].days.forEach(day=>{const p=dk(i,day.d).peso;if(p)allEntries.push(parseFloat(p));}));
+  document.getElementById('peso-inicial').textContent=allEntries.length?allEntries[0].toFixed(1):'—';
+  document.getElementById('peso-atual').textContent=allEntries.length?allEntries[allEntries.length-1].toFixed(1):'—';
+
+  const list=document.getElementById('weight-list');
+  if(!entries.length){list.innerHTML='<div style="text-align:center;color:var(--muted);padding:36px 0;font-size:13px;">Nenhum peso registrado em '+MONTHS[mi].name+'.</div>';return;}
+  list.innerHTML='';
+  entries.forEach((e,i)=>{
+    const prev=i>0?entries[i-1].peso:null;
+    const delta=prev!==null?e.peso-prev:null;
+    const metaOk=meta&&e.peso<=meta;
+    let dHtml='';
+    if(delta!==null){const cls=delta<0?'delta-down':'delta-up';dHtml=`<span class="weight-delta ${cls}">${delta<0?'':'+' }${delta.toFixed(1)}kg</span>`;}
+    const row=document.createElement('div');
+    row.className='weight-row';
+    row.innerHTML=`<div class="weight-date">Dia ${String(e.day).padStart(2,'0')} ${e.dow}</div><div class="weight-val">${e.peso.toFixed(1)}</div>${dHtml}<div style="font-size:11px;margin-left:auto">${metaOk?'✅':''}</div>`;
+    list.appendChild(row);
+  });
+}
+
+// ── GYM VIEW ─────────────────────────────────────────────────────────────────
+function renderGymView(){
+  buildScroller('gym-month-scroller',gymMonth,(mi)=>{gymMonth=mi;renderGymView();});
+  const mi=gymMonth;
+  let gym=0,walk=0,rest=0,totalMin=0;
+  MONTHS[mi].days.forEach(day=>{const dd=dk(mi,day.d);if(dd.gym==='gym'){gym++;totalMin+=parseInt(dd.gymDur||0);}if(dd.gym==='walk')walk++;if(!dd.gym||dd.gym==='rest')rest++;});
+  document.getElementById('gym-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-val" style="color:var(--blue)">${gym}</div><div class="stat-lbl">Treinos</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--green)">${walk}</div><div class="stat-lbl">Caminhadas</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--orange)">${rest}</div><div class="stat-lbl">Descanso</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--yellow)">${totalMin||'—'}</div><div class="stat-lbl">Min totais</div></div>`;
+
+  const list=document.getElementById('gym-list');
+  list.innerHTML='';
+  const activeDays=MONTHS[mi].days.filter(day=>dk(mi,day.d).gym&&dk(mi,day.d).gym!=='rest');
+  if(!activeDays.length){list.innerHTML='<div style="text-align:center;color:var(--muted);padding:36px 0;font-size:13px;">Nenhum treino em '+MONTHS[mi].name+'.</div>';return;}
+  activeDays.forEach(day=>{
+    const dd=dk(mi,day.d);
+    const gymType=dd.gymType||'Musculação';
+    const dur=dd.gymDur||'';
+    const intens=dd.gymInt||'mid';
+    const icon=dd.gym==='gym'?'🏋️':'🚶';
+    const typesBtns=GYM_TYPES.map(t=>`<button class="gym-type-btn ${dd.gym==='gym'&&gymType===t?'sel':''}" onclick="setGymType(${mi},${day.d},'${t}') ">${t}</button>`).join('');
+    const row=document.createElement('div');
+    row.className='gym-log-row';
+    row.innerHTML=`
+      <div class="gym-log-header">
+        <div style="font-size:17px">${icon}</div>
+        <div class="gym-log-date">Dia ${String(day.d).padStart(2,'0')} ${day.dow}</div>
+        <div class="gym-log-type">${dd.gym==='gym'?gymType:'Caminhada'}</div>
+        <div class="gym-log-dur">${dur?dur+'min':''}</div>
+      </div>
+      ${dd.gym==='gym'?`<div class="gym-log-body">
+        <div class="gym-type-btns">${typesBtns}</div>
+        <div class="dur-row">
+          <input class="dur-input" type="number" placeholder="min" value="${dur}" oninput="setGymDur(${mi},${day.d},this.value)"/>
+          <span style="font-size:11px;color:var(--muted)">min</span>
+          <div class="int-btns">
+            <button class="int-btn ${intens==='high'?'sel-high':''}" onclick="setGymInt(${mi},${day.d},'high')">🔥</button>
+            <button class="int-btn ${intens==='mid'?'sel-mid':''}" onclick="setGymInt(${mi},${day.d},'mid')">💪</button>
+            <button class="int-btn ${intens==='low'?'sel-low':''}" onclick="setGymInt(${mi},${day.d},'low')">🧘</button>
+          </div>
+        </div></div>`:'<div style="padding:7px 13px;font-size:11px;color:var(--muted)">Caminhada registrada</div>'}`;
+    list.appendChild(row);
+  });
+}
+function setGymType(mi,d,t){dk(mi,d).gymType=t;save();renderGymView();}
+function setGymDur(mi,d,v){dk(mi,d).gymDur=v?parseInt(v):'';save();renderGymView();}
+function setGymInt(mi,d,v){dk(mi,d).gymInt=v;save();renderGymView();}
+
+// ── RESUMO ────────────────────────────────────────────────────────────────────
+function renderResumo(){
+  let totalDiet=0,totalFree=0,totalGym=0,totalPesos=[];
+  MONTHS.forEach((_,mi)=>{
+    MONTHS[mi].days.forEach(day=>{
+      const dd=dk(mi,day.d);
+      MEALS.forEach(m=>{if(dd[m.id]==='diet')totalDiet++;if(dd[m.id]==='free')totalFree++;});
+      if(dd.gym==='gym')totalGym++;
+      if(dd.peso)totalPesos.push(parseFloat(dd.peso));
+    });
+  });
+  const total=totalDiet+totalFree;
+  const pctYear=total>0?Math.round(totalDiet/total*100):0;
+  const avgPeso=totalPesos.length?(totalPesos.reduce((a,b)=>a+b,0)/totalPesos.length).toFixed(1):'—';
+
+  let html=`<div class="year-overview">
+    <div class="year-stat"><div class="year-stat-val" style="color:var(--green)">${totalDiet}</div><div class="year-stat-lbl">Refeições dieta</div></div>
+    <div class="year-stat"><div class="year-stat-val" style="color:var(--blue)">${totalGym}</div><div class="year-stat-lbl">Treinos</div></div>
+    <div class="year-stat"><div class="year-stat-val" style="color:var(--purple)">${pctYear}%</div><div class="year-stat-lbl">% dieta</div></div>
+    <div class="year-stat"><div class="year-stat-val" style="color:var(--orange)">${avgPeso}</div><div class="year-stat-lbl">Peso médio</div></div>
+    <div class="year-stat"><div class="year-stat-val" style="color:var(--orange)">${totalFree}</div><div class="year-stat-lbl">Livres</div></div>
+    <div class="year-stat"><div class="year-stat-val" style="color:var(--yellow)">${totalPesos.length}</div><div class="year-stat-lbl">Dias c/ peso</div></div>
+  </div>`;
+
+  MONTHS.forEach((_,mi)=>{
+    let diet=0,free=0,gym=0,tot=0,pesos=[];
+    MONTHS[mi].days.forEach(day=>{
+      const dd=dk(mi,day.d);
+      MEALS.forEach(m=>{if(dd[m.id]==='diet'){diet++;tot++;}if(dd[m.id]==='free'){free++;tot++;} });
+      if(dd.gym==='gym')gym++;
+      if(dd.peso)pesos.push(parseFloat(dd.peso));
+    });
+    const pct=tot>0?Math.round(diet/tot*100):0;
+    const ap=pesos.length?(pesos.reduce((a,b)=>a+b,0)/pesos.length).toFixed(1):'—';
+    html+=`<div class="month-card">
+      <div class="month-card-title">${MONTHS[mi].name}</div>
+      <div class="month-stats">
+        <div class="mstat"><div class="mstat-val" style="color:var(--green)">${diet}</div><div class="mstat-lbl">Dieta ✅</div></div>
+        <div class="mstat"><div class="mstat-val" style="color:var(--orange)">${free}</div><div class="mstat-lbl">Livre 🍔</div></div>
+        <div class="mstat"><div class="mstat-val" style="color:var(--blue)">${gym}</div><div class="mstat-lbl">Treinos 🏋️</div></div>
+        <div class="mstat"><div class="mstat-val" style="color:var(--orange)">${ap}</div><div class="mstat-lbl">Peso médio</div></div>
+        <div class="mstat"><div class="mstat-val" style="color:var(--purple)">${pct}%</div><div class="mstat-lbl">% Dieta</div></div>
+        <div class="mstat" style="display:flex;flex-direction:column;justify-content:center">
+          <div class="prog-bar-wrap"><div class="prog-bar" style="width:${pct}%"></div></div>
+          <div class="mstat-lbl" style="margin-top:5px">aderência</div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  html+=`<div style="text-align:center;padding:18px 10px;font-size:13px;color:var(--muted);font-style:italic;">💪 Consistência é a chave. Cada escolha conta.</div>`;
+  document.getElementById('resumo-content').innerHTML=html;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+const savedMeta=localStorage.getItem('meta-peso');
+if(savedMeta){const el=document.getElementById('meta-peso');if(el)el.value=savedMeta;}
+buildScroller('month-scroller',curMonth,setMonth);
+document.getElementById('hero-month-title').textContent=MONTHS[curMonth].name+' 2026';
+renderDayList();
+updateStats();
+</script>
+</body>
+</html>
