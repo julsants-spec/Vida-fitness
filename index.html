@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Minha Saúde — Juliana</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F8F4FF; min-height: 100vh; padding-bottom: 40px; }
+
+  .header { background: linear-gradient(135deg, #4A2E6B, #7B4FA6); padding: 24px 20px 20px; text-align: center; }
+  .header h1 { color: #fff; font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .header p { color: #C8A8E9; font-size: 13px; }
+
+  .tabs { display: flex; background: #fff; border-bottom: 1px solid #E8D5F5; position: sticky; top: 0; z-index: 10; }
+  .tab { flex: 1; padding: 12px 4px; text-align: center; font-size: 12px; font-weight: 600; color: #9A7AB0; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .tab.active { color: #7B4FA6; border-bottom-color: #7B4FA6; }
+
+  .section { display: none; padding: 16px; }
+  .section.active { display: block; }
+
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat-card { background: #fff; border-radius: 12px; padding: 12px 8px; text-align: center; box-shadow: 0 1px 4px rgba(74,46,107,0.08); }
+  .stat-num { font-size: 22px; font-weight: 700; }
+  .stat-label { font-size: 10px; color: #888; margin-top: 2px; }
+
+  /* WEEK NAV */
+  .week-nav { display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(74,46,107,0.06); }
+  .week-nav button { background: none; border: 1px solid #E0D0F0; border-radius: 8px; padding: 6px 12px; font-size: 18px; cursor: pointer; color: #7B4FA6; }
+  .week-label { font-size: 13px; font-weight: 600; color: #4A2E6B; }
+
+  /* DAY CARD */
+  .day-card { background: #fff; border-radius: 14px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(74,46,107,0.07); }
+  .day-card-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; cursor: pointer; }
+  .day-name { font-size: 14px; font-weight: 700; color: #4A2E6B; }
+  .day-date { font-size: 11px; color: #aaa; }
+  .day-badges { display: flex; gap: 5px; }
+  .badge-mini { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .day-body { padding: 0 14px 14px; border-top: 1px solid #F0E8FA; }
+
+  /* REFEICOES */
+  .refeicao-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F5F0FA; }
+  .refeicao-row:last-child { border-bottom: none; }
+  .refeicao-name { font-size: 13px; color: #4A2E6B; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .refeicao-name span { font-size: 15px; }
+  .status-btns { display: flex; gap: 6px; }
+  .status-btn { border: none; border-radius: 8px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; opacity: 0.4; }
+  .status-btn.active { opacity: 1; transform: scale(1.05); }
+  .btn-feito { background: #D4EDDA; color: #2E7D46; }
+  .btn-dieta { background: #CCE5FF; color: #1565C0; }
+  .btn-livre { background: #FFF3CD; color: #B8860B; }
+  .btn-nao { background: #F8D7DA; color: #C0392B; }
+
+  /* ACADEMIA */
+  .academia-row { padding: 10px 0; }
+  .academia-row label { font-size: 13px; color: #4A2E6B; font-weight: 600; display: block; margin-bottom: 8px; }
+  .gym-btns { display: flex; gap: 8px; margin-bottom: 10px; }
+  .gym-btn { flex: 1; border: 2px solid #E0D0F0; border-radius: 10px; padding: 8px; font-size: 12px; font-weight: 700; cursor: pointer; background: #fff; color: #9A7AB0; transition: all 0.15s; text-align: center; }
+  .gym-btn.active-sim { border-color: #5A9E7C; background: #EDF7F2; color: #2E7D46; }
+  .gym-btn.active-nao { border-color: #E07070; background: #FDF0F0; color: #C0392B; }
+  .treino-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .treino-btn { border: 1.5px solid #E0D0F0; border-radius: 8px; padding: 5px 14px; font-size: 12px; font-weight: 700; cursor: pointer; background: #fff; color: #9A7AB0; transition: all 0.15s; }
+  .treino-btn.active { border-color: #7B4FA6; background: #F3ECF9; color: #7B4FA6; }
+
+  /* PESO */
+  .peso-card { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(74,46,107,0.07); }
+  .peso-card h3 { font-size: 14px; font-weight: 700; color: #4A2E6B; margin-bottom: 12px; }
+  .peso-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .peso-input-row label { font-size: 12px; color: #888; width: 80px; }
+  .peso-input { border: 1.5px solid #E0D0F0; border-radius: 8px; padding: 8px 10px; font-size: 14px; width: 100px; color: #4A2E6B; font-weight: 600; background: #F8F4FF; }
+  .peso-input:focus { outline: none; border-color: #7B4FA6; }
+  .save-btn { width: 100%; background: linear-gradient(135deg, #7B4FA6, #4A2E6B); color: #fff; border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+  .save-btn:active { transform: scale(0.98); }
+
+  .peso-historico { background: #fff; border-radius: 14px; padding: 16px; box-shadow: 0 1px 4px rgba(74,46,107,0.07); }
+  .peso-historico h3 { font-size: 14px; font-weight: 700; color: #4A2E6B; margin-bottom: 12px; }
+  .peso-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F0E8FA; }
+  .peso-row:last-child { border-bottom: none; }
+  .peso-semana { font-size: 12px; color: #888; }
+  .peso-val { font-size: 15px; font-weight: 700; color: #7B4FA6; }
+  .peso-diff { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .diff-down { background: #D4EDDA; color: #2E7D46; }
+  .diff-up { background: #F8D7DA; color: #C0392B; }
+  .diff-same { background: #F0E8FA; color: #7B4FA6; }
+
+  /* CHART */
+  .chart-wrap { margin-top: 12px; }
+  .chart-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .chart-label { font-size: 10px; color: #888; width: 28px; text-align: right; }
+  .chart-bar-bg { flex: 1; background: #F0E8FA; border-radius: 999px; height: 18px; overflow: hidden; position: relative; }
+  .chart-bar-fill { height: 100%; background: linear-gradient(90deg, #7B4FA6, #C8A8E9); border-radius: 999px; transition: width 0.5s; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; }
+  .chart-bar-val { font-size: 10px; font-weight: 700; color: #fff; }
+
+  /* SECTION TITLE */
+  .section-title { font-size: 15px; font-weight: 700; color: #4A2E6B; margin-bottom: 12px; padding-top: 4px; }
+
+  .empty-state { text-align: center; padding: 30px 20px; color: #aaa; font-size: 13px; }
+  .empty-state div { font-size: 32px; margin-bottom: 8px; }
+
+  .chevron { font-size: 12px; color: #C8A8E9; transition: transform 0.2s; }
+  .chevron.open { transform: rotate(180deg); }
+
+  .today-badge { background: #7B4FA6; color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Minha Saúde ✦</h1>
+  <p>Acompanhe suas refeições, academia e peso</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('refeicoes')">🍽️ Refeições</div>
+  <div class="tab" onclick="showTab('academia')">💪 Academia</div>
+  <div class="tab" onclick="showTab('peso')">⚖️ Peso</div>
+</div>
+
+<!-- REFEICOES -->
+<div class="section active" id="tab-refeicoes">
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num" id="s-feito" style="color:#2E7D46">0</div><div class="stat-label">na dieta</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-livre" style="color:#B8860B">0</div><div class="stat-label">livre</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-nao" style="color:#C0392B">0</div><div class="stat-label">não fez</div></div>
+  </div>
+
+  <div class="week-nav">
+    <button onclick="changeWeek(-1)">‹</button>
+    <div class="week-label" id="week-label">Esta semana</div>
+    <button onclick="changeWeek(1)">›</button>
+  </div>
+
+  <div id="days-container"></div>
+</div>
+
+<!-- ACADEMIA -->
+<div class="section" id="tab-academia">
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num" id="a-sim" style="color:#2E7D46">0</div><div class="stat-label">treinos</div></div>
+    <div class="stat-card"><div class="stat-num" id="a-nao" style="color:#C0392B">0</div><div class="stat-label">faltas</div></div>
+    <div class="stat-card"><div class="stat-num" id="a-pct" style="color:#7B4FA6">0%</div><div class="stat-label">frequência</div></div>
+  </div>
+
+  <div class="week-nav">
+    <button onclick="changeWeekA(-1)">‹</button>
+    <div class="week-label" id="week-label-a">Esta semana</div>
+    <button onclick="changeWeekA(1)">›</button>
+  </div>
+
+  <div id="academia-container"></div>
+
+  <div class="peso-card" style="margin-top:16px">
+    <h3>Frequência semanal</h3>
+    <div id="gym-chart"></div>
+  </div>
+</div>
+
+<!-- PESO -->
+<div class="section" id="tab-peso">
+  <div class="peso-card">
+    <h3>Registrar peso desta semana</h3>
+    <div class="peso-input-row">
+      <label>Peso (kg)</label>
+      <input type="number" class="peso-input" id="peso-input" step="0.1" placeholder="69.5">
+    </div>
+    <div class="peso-input-row">
+      <label>Semana</label>
+      <input type="date" class="peso-input" id="peso-data" style="width:160px">
+    </div>
+    <button class="save-btn" onclick="savePeso()">Salvar peso</button>
+  </div>
+
+  <div class="peso-historico">
+    <h3>Histórico de peso</h3>
+    <div id="peso-lista"></div>
+    <div class="chart-wrap" id="peso-chart"></div>
+  </div>
+</div>
+
+<script>
+const KEY = 'juliana_saude_v1';
+const DIAS = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+const REFS = [
+  {id:'cafe', nome:'Café da manhã', icon:'☕'},
+  {id:'almoco', nome:'Almoço', icon:'🍱'},
+  {id:'lanche', nome:'Lanche da tarde', icon:'🍎'},
+  {id:'jantar', nome:'Jantar', icon:'🌙'},
+];
+const TREINOS = ['A','B','C','D','E'];
+
+let data = {refeicoes:{}, academia:{}, peso:[]};
+let weekOffset = 0;
+let weekOffsetA = 0;
+let openDays = new Set();
+let openDaysA = new Set();
+
+function save() { localStorage.setItem(KEY, JSON.stringify(data)); }
+function load() {
+  try { const d = localStorage.getItem(KEY); if(d) data = JSON.parse(d); } catch(e){}
+}
+
+function getWeekDates(offset) {
+  const now = new Date();
+  const day = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+  const dates = [];
+  for(let i=0;i<7;i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    dates.push(d);
+  }
+  return dates;
+}
+
+function dateKey(d) {
+  return d.toISOString().split('T')[0];
+}
+
+function isToday(d) {
+  return dateKey(d) === dateKey(new Date());
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  event.target.classList.add('active');
+  if(tab==='refeicoes') renderRefeicoes();
+  if(tab==='academia') renderAcademia();
+  if(tab==='peso') renderPeso();
+}
+
+function changeWeek(d) { weekOffset += d; renderRefeicoes(); }
+function changeWeekA(d) { weekOffsetA += d; renderAcademia(); }
+
+function setStatus(dateK, refId, status) {
+  if(!data.refeicoes[dateK]) data.refeicoes[dateK] = {};
+  if(data.refeicoes[dateK][refId] === status) delete data.refeicoes[dateK][refId];
+  else data.refeicoes[dateK][refId] = status;
+  save();
+  renderRefeicoes();
+}
+
+function setGym(dateK, val) {
+  if(!data.academia[dateK]) data.academia[dateK] = {};
+  if(data.academia[dateK].foi === val) delete data.academia[dateK].foi;
+  else data.academia[dateK].foi = val;
+  save();
+  renderAcademia();
+}
+
+function setTreino(dateK, t) {
+  if(!data.academia[dateK]) data.academia[dateK] = {};
+  if(data.academia[dateK].treino === t) delete data.academia[dateK].treino;
+  else data.academia[dateK].treino = t;
+  save();
+  renderAcademia();
+}
+
+function toggleDay(key) {
+  if(openDays.has(key)) openDays.delete(key);
+  else openDays.add(key);
+  renderRefeicoes();
+}
+
+function toggleDayA(key) {
+  if(openDaysA.has(key)) openDaysA.delete(key);
+  else openDaysA.add(key);
+  renderAcademia();
+}
+
+function renderRefeicoes() {
+  const dates = getWeekDates(weekOffset);
+  const label = fmtDate(dates[0]) + ' – ' + fmtDate(dates[6]);
+  document.getElementById('week-label').textContent = weekOffset===0 ? 'Esta semana ('+label+')' : label;
+
+  let totalFeito=0, totalLivre=0, totalNao=0;
+  dates.forEach(d => {
+    const dk = dateKey(d);
+    const day = data.refeicoes[dk]||{};
+    REFS.forEach(r => {
+      const s = day[r.id];
+      if(s==='feito'||s==='dieta') totalFeito++;
+      else if(s==='livre') totalLivre++;
+      else if(s==='nao') totalNao++;
+    });
+  });
+  document.getElementById('s-feito').textContent = totalFeito;
+  document.getElementById('s-livre').textContent = totalLivre;
+  document.getElementById('s-nao').textContent = totalNao;
+
+  const c = document.getElementById('days-container');
+  c.innerHTML = '';
+
+  dates.forEach((d, i) => {
+    const dk = dateKey(d);
+    const day = data.refeicoes[dk]||{};
+    const isOpen = openDays.has(dk) || isToday(d);
+    const today = isToday(d);
+
+    let feito=0,livre=0,nao=0;
+    REFS.forEach(r => {
+      const s = day[r.id];
+      if(s==='feito'||s==='dieta') feito++;
+      else if(s==='livre') livre++;
+      else if(s==='nao') nao++;
+    });
+
+    const card = document.createElement('div');
+    card.className = 'day-card';
+
+    const header = document.createElement('div');
+    header.className = 'day-card-header';
+    header.onclick = () => toggleDay(dk);
+
+    let badges = '';
+    if(feito>0) badges += `<span class="badge-mini" style="background:#D4EDDA;color:#2E7D46">${feito} ✓</span>`;
+    if(livre>0) badges += `<span class="badge-mini" style="background:#FFF3CD;color:#B8860B">${livre} livre</span>`;
+    if(nao>0) badges += `<span class="badge-mini" style="background:#F8D7DA;color:#C0392B">${nao} ✗</span>`;
+
+    header.innerHTML = `
+      <div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="day-name">${DIAS[i]}</span>
+          ${today ? '<span class="today-badge">hoje</span>' : ''}
+        </div>
+        <span class="day-date">${fmtDate(d)}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="day-badges">${badges}</div>
+        <span class="chevron ${isOpen?'open'}">▼</span>
+      </div>`;
+
+    card.appendChild(header);
+
+    if(isOpen) {
+      const body = document.createElement('div');
+      body.className = 'day-body';
+      REFS.forEach(r => {
+        const s = day[r.id]||'';
+        const row = document.createElement('div');
+        row.className = 'refeicao-row';
+        row.innerHTML = `
+          <div class="refeicao-name"><span>${r.icon}</span>${r.nome}</div>
+          <div class="status-btns">
+            <button class="status-btn btn-dieta ${s==='dieta'?'active':''}" onclick="setStatus('${dk}','${r.id}','dieta')">Dieta</button>
+            <button class="status-btn btn-livre ${s==='livre'?'active':''}" onclick="setStatus('${dk}','${r.id}','livre')">Livre</button>
+            <button class="status-btn btn-nao ${s==='nao'?'active':''}" onclick="setStatus('${dk}','${r.id}','nao')">Não fiz</button>
+          </div>`;
+        body.appendChild(row);
+      });
+      card.appendChild(body);
+    }
+
+    c.appendChild(card);
+  });
+}
+
+function renderAcademia() {
+  const dates = getWeekDates(weekOffsetA);
+  const label = fmtDate(dates[0]) + ' – ' + fmtDate(dates[6]);
+  document.getElementById('week-label-a').textContent = weekOffsetA===0 ? 'Esta semana ('+label+')' : label;
+
+  let sim=0, nao=0;
+  dates.forEach(d => {
+    const dk = dateKey(d);
+    const day = data.academia[dk]||{};
+    if(day.foi===true) sim++;
+    else if(day.foi===false) nao++;
+  });
+  const total = sim+nao;
+  document.getElementById('a-sim').textContent = sim;
+  document.getElementById('a-nao').textContent = nao;
+  document.getElementById('a-pct').textContent = total>0 ? Math.round((sim/total)*100)+'%' : '0%';
+
+  const c = document.getElementById('academia-container');
+  c.innerHTML = '';
+
+  dates.forEach((d, i) => {
+    const dk = dateKey(d);
+    const day = data.academia[dk]||{};
+    const isOpen = openDaysA.has(dk) || isToday(d);
+    const today = isToday(d);
+    const foiVal = day.foi;
+
+    const card = document.createElement('div');
+    card.className = 'day-card';
+
+    const header = document.createElement('div');
+    header.className = 'day-card-header';
+    header.onclick = () => toggleDayA(dk);
+
+    let badgeHtml = '';
+    if(foiVal===true) badgeHtml = `<span class="badge-mini" style="background:#D4EDDA;color:#2E7D46">Fui ✓</span>`;
+    else if(foiVal===false) badgeHtml = `<span class="badge-mini" style="background:#F8D7DA;color:#C0392B">Não fui</span>`;
+    if(day.treino) badgeHtml += `<span class="badge-mini" style="background:#F3ECF9;color:#7B4FA6">Treino ${day.treino}</span>`;
+
+    header.innerHTML = `
+      <div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="day-name">${DIAS[i]}</span>
+          ${today ? '<span class="today-badge">hoje</span>' : ''}
+        </div>
+        <span class="day-date">${fmtDate(d)}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="day-badges">${badgeHtml}</div>
+        <span class="chevron ${isOpen?'open'}">▼</span>
+      </div>`;
+    card.appendChild(header);
+
+    if(isOpen) {
+      const body = document.createElement('div');
+      body.className = 'day-body';
+      body.innerHTML = `
+        <div class="academia-row">
+          <label>Fui à academia?</label>
+          <div class="gym-btns">
+            <button class="gym-btn ${foiVal===true?'active-sim':''}" onclick="setGym('${dk}',true)">💪 Sim, fui!</button>
+            <button class="gym-btn ${foiVal===false?'active-nao':''}" onclick="setGym('${dk}',false)">😅 Não fui</button>
+          </div>
+          ${foiVal===true ? `<label style="margin-top:8px">Qual treino?</label>
+          <div class="treino-btns">
+            ${TREINOS.map(t=>`<button class="treino-btn ${day.treino===t?'active':''}" onclick="setTreino('${dk}','${t}')">Treino ${t}</button>`).join('')}
+          </div>` : ''}
+        </div>`;
+      card.appendChild(body);
+    }
+    c.appendChild(card);
+  });
+
+  renderGymChart();
+}
+
+function renderGymChart() {
+  const weeks = [];
+  for(let w=-4; w<=0; w++) {
+    const dates = getWeekDates(w);
+    let sim = 0;
+    dates.forEach(d => {
+      const dk = dateKey(d);
+      if(data.academia[dk]&&data.academia[dk].foi===true) sim++;
+    });
+    const label = w===0 ? 'Atual' : fmtDate(dates[0]);
+    weeks.push({label, sim});
+  }
+  const max = Math.max(...weeks.map(w=>w.sim), 1);
+  const chart = document.getElementById('gym-chart');
+  chart.innerHTML = weeks.map(w => `
+    <div class="chart-bar-row">
+      <span class="chart-label">${w.label}</span>
+      <div class="chart-bar-bg">
+        <div class="chart-bar-fill" style="width:${Math.round((w.sim/max)*100)}%">
+          ${w.sim>0?`<span class="chart-bar-val">${w.sim}</span>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function savePeso() {
+  const val = parseFloat(document.getElementById('peso-input').value);
+  const dt = document.getElementById('peso-data').value;
+  if(!val || !dt) { alert('Preencha o peso e a data!'); return; }
+  const existing = data.peso.findIndex(p => p.data === dt);
+  if(existing>=0) data.peso[existing].valor = val;
+  else data.peso.push({data:dt, valor:val});
+  data.peso.sort((a,b) => a.data.localeCompare(b.data));
+  save();
+  renderPeso();
+}
+
+function renderPeso() {
+  const today = dateKey(new Date());
+  document.getElementById('peso-data').value = today;
+
+  const lista = document.getElementById('peso-lista');
+  if(data.peso.length===0) {
+    lista.innerHTML = '<div class="empty-state"><div>⚖️</div>Nenhum peso registrado ainda</div>';
+    document.getElementById('peso-chart').innerHTML = '';
+    return;
+  }
+
+  const reversed = [...data.peso].reverse();
+  lista.innerHTML = reversed.map((p,i) => {
+    const prev = reversed[i+1];
+    let diffHtml = '';
+    if(prev) {
+      const diff = (p.valor - prev.valor).toFixed(1);
+      const cls = diff<0 ? 'diff-down' : diff>0 ? 'diff-up' : 'diff-same';
+      const sign = diff>0 ? '+' : '';
+      diffHtml = `<span class="peso-diff ${cls}">${sign}${diff} kg</span>`;
+    }
+    const d = new Date(p.data+'T12:00:00');
+    const label = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    return `<div class="peso-row">
+      <span class="peso-semana">${label}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${diffHtml}
+        <span class="peso-val">${p.valor} kg</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const chart = document.getElementById('peso-chart');
+  if(data.peso.length<2) { chart.innerHTML=''; return; }
+  const vals = data.peso.map(p=>p.valor);
+  const minV = Math.min(...vals);
+  const maxV = Math.max(...vals);
+  const range = maxV - minV || 1;
+  const recent = data.peso.slice(-6);
+  chart.innerHTML = `<div style="margin-top:12px;font-size:12px;font-weight:700;color:#4A2E6B;margin-bottom:8px">Evolução do peso</div>` +
+    recent.map(p => {
+      const pct = Math.round(((p.valor-minV)/range)*100);
+      const d = new Date(p.data+'T12:00:00');
+      const label = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+      return `<div class="chart-bar-row">
+        <span class="chart-label">${label}</span>
+        <div class="chart-bar-bg">
+          <div class="chart-bar-fill" style="width:${Math.max(pct,15)}%;background:linear-gradient(90deg,#C8A8E9,#7B4FA6)">
+            <span class="chart-bar-val">${p.valor}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+load();
+openDays.add(dateKey(new Date()));
+openDaysA.add(dateKey(new Date()));
+renderRefeicoes();
+</script>
+</body>
+</html>
